@@ -186,16 +186,22 @@ export function setupRestRoutes(app: express.Application): void {
   // Создание игры с ботом
   app.post('/api/game/bot', async (req: AuthRequest, res: Response) => {
     try {
+      console.log('POST /api/game/bot - request received');
       const userId = req.userId;
       const { difficulty = 'medium' } = req.body;
 
+      console.log('User ID:', userId);
+      console.log('Difficulty:', difficulty);
+
       if (!userId) {
+        console.log('Error: Not authenticated');
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
       const { createBotGame } = await import('./bot');
       const { gameId } = await createBotGame(userId, difficulty);
 
+      console.log('Bot game created:', gameId);
       res.json({ gameId });
     } catch (error) {
       console.error('Error creating bot game:', error);
