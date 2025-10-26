@@ -1,6 +1,7 @@
 {
   "name": "seabattle-miniapp",
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm:dev:*\"",
     "dev:client": "vite --port 3000",
