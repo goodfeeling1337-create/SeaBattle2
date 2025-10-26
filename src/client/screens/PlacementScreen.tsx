@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Button } from '../components/Button';
+import { GameBoard } from '../components/GameBoard';
+import { useWebSocket } from '../hooks/useWebSocket';
+import type { BoardState } from '../../types';
 
 interface PlacementScreenProps {
   gameId: string;
@@ -7,8 +10,39 @@ interface PlacementScreenProps {
   onCancel: () => void;
 }
 
-export default function PlacementScreen({ onReady, onCancel }: PlacementScreenProps) {
-  const [placed, setPlaced] = useState(false);
+export default function PlacementScreen({ gameId, onReady, onCancel }: PlacementScreenProps) {
+  const [board, setBoard] = useState<BoardState | null>(null);
+  const { send, connected } = useWebSocket();
+
+  const handleBoardChange = (newBoard: BoardState) => {
+    setBoard(newBoard);
+
+    // Проверяем что все корабли размещены
+    const shipsConfig = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+    const hasAllShips = shipsConfig.every(
+      (size) => newBoard.ships.filter((s) => s.size === size).length >= 1
+    );
+
+    if (hasAllShips && newBoard.ships.length === 10) {
+      // Отправляем доску на сервер
+      send('game:board.set', {
+        gameId,
+        board: newBoard,
+      });
+    }
+  };
+
+  const handleReady = () => {
+    if (!board) return;
+
+    // Проверяем что все корабли размещены
+    if (board.ships.length !== 10) {
+      alert('Разместите все корабли!');
+      return;
+    }
+
+    onReady();
+  };
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -21,21 +55,15 @@ export default function PlacementScreen({ onReady, onCancel }: PlacementScreenPr
           </p>
         </div>
 
-        {/* TODO: Render board for placement */}
-        <div className="border-2 border-tg-text rounded p-2 mb-4">
-          <div className="grid grid-cols-10 gap-1">
-            {Array.from({ length: 100 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-square border border-tg-hint bg-tg-secondary-bg rounded"
-              ></div>
-            ))}
-          </div>
-        </div>
+        <GameBoard width={10} height={10} onBoardChange={handleBoardChange} showShips={true} />
 
-        <div className="flex gap-4">
-          <Button onClick={onReady} disabled={!placed} fullWidth>
-            Готов
+        {!connected && (
+          <p className="text-red-500 text-sm mt-2">Подключение к серверу...</p>
+        )}
+
+        <div className="flex gap-4 mt-4">
+          <Button onClick={handleReady} disabled={!board || board.ships.length !== 10} fullWidth>
+            Готов ({board?.ships.length || 0}/10 кораблей)
           </Button>
           <Button onClick={onCancel} variant="secondary" fullWidth>
             Отмена

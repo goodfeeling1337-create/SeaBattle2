@@ -187,7 +187,36 @@ async function handleBoardSet(ws: ClientConnection, payload: any): Promise<void>
 
   const { board } = payload;
 
-  // TODO: Validate board against rules
+  // Получение игры и правил
+  const game = await prisma.game.findUnique({
+    where: { id: ws.gameId },
+    include: { ruleSet: true },
+  });
+
+  if (!game || !game.ruleSet) {
+    return ws.send(JSON.stringify({ type: 'error', error: 'Game or rule set not found' }));
+  }
+
+  // Валидация доски
+  try {
+    const { validateBoard } = await import('../domain/rules');
+    const boardState = deserializeBoard(board.dataJson || JSON.stringify(board));
+
+    const isValid = validateBoard(boardState, {
+      width: game.width,
+      height: game.height,
+      ships: JSON.parse(game.ruleSet.shipsJson).ships,
+      allowDiagonal: game.ruleSet.allowDiagonal,
+      touchProhibited: game.ruleSet.touchProhibited,
+    });
+
+    if (!isValid) {
+      return ws.send(JSON.stringify({ type: 'error', error: 'Invalid board placement' }));
+    }
+  } catch (error) {
+    console.error('Board validation error:', error);
+    return ws.send(JSON.stringify({ type: 'error', error: 'Failed to validate board' }));
+  }
 
   // Обновление доски в БД
   await prisma.board.upsert({

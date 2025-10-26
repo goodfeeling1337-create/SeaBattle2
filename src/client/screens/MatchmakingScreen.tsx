@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 interface MatchmakingScreenProps {
   onGameStarted: (gameId: string) => void;
@@ -8,19 +9,40 @@ interface MatchmakingScreenProps {
 
 export default function MatchmakingScreen({ onGameStarted, onCancel }: MatchmakingScreenProps) {
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'matched'>('connecting');
+  const [gameId, setGameId] = useState<string | null>(null);
+  const { send, on, connected } = useWebSocket();
 
   useEffect(() => {
-    // TODO: Connect to WebSocket and join queue
-    setStatus('waiting');
+    if (!connected) {
+      setStatus('connecting');
+      return;
+    }
 
-    // Simulate match found after 3 seconds
-    const timer = setTimeout(() => {
-      setStatus('matched');
-      onGameStarted('mock-game-id');
-    }, 3000);
+    // Подписываемся на события матчмейкинга
+    const unsubscribe = on('game:started', (data: any) => {
+      if (data.gameId) {
+        setGameId(data.gameId);
+        setStatus('matched');
+        onGameStarted(data.gameId);
+      }
+    });
 
-    return () => clearTimeout(timer);
-  }, [onGameStarted]);
+    on('queue:waiting', () => {
+      setStatus('waiting');
+    });
+
+    // Вход в очередь
+    send('game:queue.join');
+
+    return () => {
+      unsubscribe();
+    };
+  }, [connected, send, on, onGameStarted]);
+
+  const handleCancel = () => {
+    send('game:queue.leave');
+    onCancel();
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-6">
@@ -35,7 +57,11 @@ export default function MatchmakingScreen({ onGameStarted, onCancel }: Matchmaki
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-tg-button"></div>
       )}
 
-      <Button onClick={onCancel} variant="secondary">
+      {!connected && status === 'connecting' && (
+        <div className="text-red-500 text-sm">Не удалось подключиться</div>
+      )}
+
+      <Button onClick={handleCancel} variant="secondary">
         Отмена
       </Button>
     </div>
