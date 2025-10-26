@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { BoardState, Position, Ship } from '../../types';
+import { isValidShipPlacement } from '../../domain/rules';
+import type { RuleSet } from '../../domain/rules';
 
 interface GameBoardProps {
   width: number;
@@ -29,6 +31,20 @@ export function GameBoard({
 
   const [selectedShipSize, setSelectedShipSize] = useState<number>(4);
   const [isHorizontal, setIsHorizontal] = useState(true);
+  
+  // Правила для валидации размещения
+  const rules: RuleSet = {
+    width,
+    height,
+    ships: [
+      { size: 4, count: 1 },
+      { size: 3, count: 2 },
+      { size: 2, count: 3 },
+      { size: 1, count: 4 },
+    ],
+    allowDiagonal: false,
+    touchProhibited: true,
+  };
 
   // Получить содержимое клетки
   const getCellContent = (x: number, y: number) => {
@@ -69,11 +85,28 @@ export function GameBoard({
         positions.push({ x: newX, y: newY });
       }
 
+      // Проверка что клетка не занята
+      const isOccupied = board.ships.some((ship) =>
+        ship.positions.some((p) =>
+          positions.some((np) => np.x === p.x && np.y === p.y)
+        )
+      );
+
+      if (isOccupied) {
+        return; // Клетка уже занята
+      }
+
       const newShip: Ship = {
         id: `ship-${Date.now()}`,
         size: selectedShipSize,
         positions,
       };
+
+      // Валидация размещения (не касается других кораблей)
+      if (!isValidShipPlacement(newShip, board, board.ships, rules)) {
+        // Попытка разместить корабль касающимся другого
+        return;
+      }
 
       const updatedBoard = {
         ...board,
