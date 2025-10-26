@@ -12,6 +12,14 @@ const config = getConfig();
 const app = express();
 const httpServer = createServer(app);
 
+// Health check ДО auth
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Middleware
 app.use(express.json());
 app.use((req, res, next) => {
@@ -30,16 +38,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // WebSocket server
 const wss = new WebSocketServer({ server: httpServer });
 setupRealtimeHandler(wss);
 
-// REST API
+// REST API (с auth middleware)
 setupRestRoutes(app);
 
 const PORT = parseInt(config.PORT, 10);
