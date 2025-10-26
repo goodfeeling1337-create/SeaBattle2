@@ -21,9 +21,13 @@ export function setupRestRoutes(app: express.Application): void {
       return next();
     }
 
+    console.log('Auth middleware - path:', req.path);
+    console.log('Auth middleware - headers:', req.headers['x-telegram-init-data'] ? 'has initData' : 'no initData');
+
     const initData = req.headers['x-telegram-init-data'] as string;
 
     if (!initData) {
+      console.log('Auth middleware - Missing auth header');
       return res.status(401).json({ error: 'Missing auth header' });
     }
 
