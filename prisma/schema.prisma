@@ -22,6 +22,7 @@ model User {
   // Game relations
   gamesAsP1    Game[]   @relation("p1")
   gamesAsP2    Game[]   @relation("p2")
+  gamesWon     Game[]   @relation("winner")
   shots        Shot[]
   boards       Board[]
 
@@ -57,7 +58,7 @@ model Game {
 
   // result
   winnerId   String?
-  winner     User?     @relation(fields: [winnerId], references: [id])
+  winner     User?     @relation("winner", fields: [winnerId], references: [id])
 
   boards     Board[]
   shots      Shot[]
@@ -94,7 +95,7 @@ model RuleSet {
 model PrivateRoom {
   id        String   @id @default(cuid())
   code      String   @unique // 4-character room code
-  gameId    String?  // Null until game is created
+  gameId    String?  @unique // Null until game is created
   game      Game?    @relation(fields: [gameId], references: [id])
   createdAt DateTime @default(now())
   expiresAt DateTime // Room expiry time
