@@ -38,6 +38,13 @@ export function useWebSocket() {
       setConnected(false);
     });
 
+    // Автоматическая отправка init при подключении
+    wsClient.on('open', () => {
+      // Отправляем init сообщение
+      const initMessage = initData || '';
+      wsClient.send({ type: 'init', initData: initMessage } as any);
+    });
+
     wsClient.connect(initData);
     setWs(wsClient as any);
   }, [setWs]);

@@ -3,6 +3,7 @@ export interface WebSocketMessage {
   type: string;
   payload?: unknown;
   error?: string;
+  initData?: string;
 }
 
 export class GameWebSocket {
