@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "name": "Classic Blue",
+  "sprites": {
+    "ship": "/skins/classic_blue/ship.svg",
+    "cell": "/skins/classic_blue/cell.svg",
+    "hit": "/skins/classic_blue/hit.svg",
+    "miss": "/skins/classic_blue/miss.svg",
+    "empty": "/skins/classic_blue/empty.svg"
+  },
+  "cssVars": {
+    "--cell-bg": "#1e3a8a",
+    "--grid": "#3b82f6"
+  }
+}
+

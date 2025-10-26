@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "name": "Dark Minimal",
+  "sprites": {
+    "ship": "/skins/dark_minimal/ship.svg",
+    "cell": "/skins/dark_minimal/cell.svg",
+    "hit": "/skins/dark_minimal/hit.svg",
+    "miss": "/skins/dark_minimal/miss.svg",
+    "empty": "/skins/dark_minimal/empty.svg"
+  },
+  "cssVars": {
+    "--cell-bg": "#0f172a",
+    "--grid": "#64748b"
+  }
+}
+

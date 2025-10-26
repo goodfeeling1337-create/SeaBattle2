@@ -1,0 +1,172 @@
+// Prisma schema for SeaBattle MiniApp
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Core ----------
+
+model User {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  telegramId   String   @unique // Telegram user id (string for safety)
+  username     String?  // from Telegram
+  displayName  String?
+  avatarUrl    String?
+
+  // Game relations
+  gamesAsP1    Game[]   @relation("p1")
+  gamesAsP2    Game[]   @relation("p2")
+  shots        Shot[]
+  boards       Board[]
+
+  // Economy (no monetization yet)
+  softCurrency Int      @default(0)
+  inventory    UserSkin[]
+  equippedSkinId String?
+  equippedSkin  Skin?    @relation(fields: [equippedSkinId], references: [id])
+
+  @@index([telegramId])
+}
+
+model Game {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  status     GameStatus @default(LOBBY)
+
+  // players
+  p1Id       String
+  p1         User      @relation("p1", fields: [p1Id], references: [id])
+  p2Id       String?
+  p2         User?     @relation("p2", fields: [p2Id], references: [id])
+
+  // board size & rules
+  width      Int @default(10)
+  height     Int @default(10)
+  ruleSetId  String?
+  ruleSet    RuleSet?  @relation(fields: [ruleSetId], references: [id])
+
+  // turn control
+  turnUserId String?
+
+  // result
+  winnerId   String?
+  winner     User?     @relation(fields: [winnerId], references: [id])
+
+  boards     Board[]
+  shots      Shot[]
+
+  @@index([status])
+  @@index([p1Id])
+  @@index([p2Id])
+}
+
+enum GameStatus {
+  LOBBY
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+model RuleSet {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  createdAt    DateTime @default(now())
+  // Example: classic: 1x4, 2x3, 3x2, 4x1; diagonal hits off, no touching
+  isClassic    Boolean  @default(true)
+  allowDiagonal Boolean @default(false)
+  touchProhibited Boolean @default(true)
+  shipsJson    String   // JSON config of ship sizes and counts
+  games        Game[]
+
+  @@map("rule_sets")
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  gameId    String
+  ownerId   String
+  createdAt DateTime @default(now())
+  dataJson  String   // compressed board layout (ships placement)
+  ready     Boolean  @default(false)
+  skinId    String?  // cosmetic only
+  skin      Skin?    @relation(fields: [skinId], references: [id])
+
+  game      Game     @relation(fields: [gameId], references: [id])
+  owner     User     @relation(fields: [ownerId], references: [id])
+
+  @@index([gameId])
+  @@index([ownerId])
+}
+
+model Shot {
+  id        String     @id @default(cuid())
+  gameId    String
+  shooterId String
+  x         Int
+  y         Int
+  result    ShotResult
+  createdAt DateTime   @default(now())
+
+  game      Game       @relation(fields: [gameId], references: [id])
+  shooter   User       @relation(fields: [shooterId], references: [id])
+
+  @@index([gameId])
+  @@index([shooterId])
+  @@unique([gameId, x, y]) // prevent duplicate shots
+}
+
+enum ShotResult {
+  MISS
+  HIT
+  SINK
+}
+
+// ---------- Cosmetics (Skins) ----------
+
+model Skin {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  key       String     @unique // e.g., "classic_blue", "neon_grid"
+  name      String
+  rarity    SkinRarity @default(COMMON)
+  // client uses this to load assets
+  assetsJson String    // { ships: urls/classes, cells, effects }
+  previewUrl String?
+  isDefault Boolean    @default(false)
+  users     User[]
+  userSkins UserSkin[]
+  boards    Board[]
+
+  @@index([key])
+}
+
+enum SkinRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+model UserSkin {
+  id         String   @id @default(cuid())
+  userId     String
+  skinId     String
+  acquiredAt DateTime @default(now())
+  source     String   // e.g., "starter", "match_win", "code"
+
+  user       User     @relation(fields: [userId], references: [id])
+  skin       Skin     @relation(fields: [skinId], references: [id])
+
+  @@unique([userId, skinId])
+  @@index([userId])
+  @@index([skinId])
+}
+
