@@ -20,7 +20,12 @@ export function useWebSocket() {
       console.warn('No Telegram initData available');
     }
 
-    const wsClient = new GameWebSocket('ws://localhost:8080');
+    // Определяем WebSocket URL на основе текущего домена
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.hostname;
+    const wsPort = window.location.hostname === 'localhost' ? ':8080' : '';
+    const wsUrl = `${wsProtocol}//${wsHost}${wsPort}/ws`;
+    const wsClient = new GameWebSocket(wsUrl);
     wsRef.current = wsClient;
 
     wsClient.on('ready', () => {
