@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { GameBoard } from '../components/GameBoard';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { generateBotBoard } from '../../domain/bot-placement';
 import type { BoardState } from '../../types';
 
 interface PlacementScreenProps {
@@ -51,6 +52,20 @@ export default function PlacementScreen({ gameId, onReady, onCancel }: Placement
     }
   };
 
+  const handleAutoPlace = () => {
+    // Генерируем случайную доску
+    const autoBoard = generateBotBoard(10, 10);
+    setBoard(autoBoard);
+
+    // Отправляем на сервер
+    if (autoBoard.ships.length === 10) {
+      send('game:board.set', {
+        gameId,
+        board: autoBoard,
+      });
+    }
+  };
+
   const handleReady = () => {
     if (!board) return;
 
@@ -80,13 +95,19 @@ export default function PlacementScreen({ gameId, onReady, onCancel }: Placement
           <p className="text-red-500 text-sm mt-2">Подключение к серверу...</p>
         )}
 
-        <div className="flex gap-4 mt-4">
-          <Button onClick={handleReady} disabled={!board || board.ships.length !== 10} fullWidth>
-            Готов ({board?.ships.length || 0}/10 кораблей)
+        <div className="mt-4 space-y-2">
+          <Button onClick={handleAutoPlace} variant="secondary" fullWidth>
+            🎲 Автоматическое размещение
           </Button>
-          <Button onClick={onCancel} variant="secondary" fullWidth>
-            Отмена
-          </Button>
+          
+          <div className="flex gap-2">
+            <Button onClick={handleReady} disabled={!board || board.ships.length !== 10} fullWidth>
+              Готов ({board?.ships.length || 0}/10 кораблей)
+            </Button>
+            <Button onClick={onCancel} variant="secondary">
+              Отмена
+            </Button>
+          </div>
         </div>
       </div>
     </div>
