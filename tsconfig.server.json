@@ -6,7 +6,7 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/server/**/*", "src/config.ts", "src/types.ts", "prisma/seed.ts"],
-  "exclude": ["src/client", "node_modules"]
+  "include": ["src/server/**/*", "src/config.ts", "src/types.ts"],
+  "exclude": ["src/client", "node_modules", "prisma"]
 }
 
