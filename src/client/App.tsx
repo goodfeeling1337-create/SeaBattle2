@@ -63,10 +63,32 @@ export default function App() {
                 Играть онлайн
               </Button>
               <Button
-                onClick={() => {
-                  setBotMode(true);
-                  // TODO: Создать игру с ботом
-                  alert('Режим с ботом в разработке');
+                onClick={async () => {
+                  try {
+                    setBotMode(true);
+                    
+                    // Создание игры с ботом
+                    const initData = window.Telegram?.WebApp?.initData || '';
+                    const response = await fetch('/api/game/bot', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-Telegram-Init-Data': initData,
+                      },
+                      body: JSON.stringify({ difficulty: 'medium' }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to create bot game');
+                    }
+
+                    const { gameId } = await response.json();
+                    setGameId(gameId);
+                    navigateTo('placement', gameId);
+                  } catch (error) {
+                    console.error('Error creating bot game:', error);
+                    alert('Не удалось создать игру с ботом');
+                  }
                 }}
                 fullWidth
                 variant="secondary"

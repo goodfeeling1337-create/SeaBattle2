@@ -62,14 +62,47 @@ export default function BattleScreen({ gameId, onGameEnd, onCancel }: BattleScre
     };
   }, [on, onGameEnd]);
 
-  const handleCellClick = (x: number, y: number) => {
+  const handleCellClick = async (x: number, y: number) => {
     if (status !== 'your-turn') return;
 
+    // Отправка выстрела игрока
     send('game:shot.fire', {
       gameId,
       x,
       y,
     });
+
+    // Если игра с ботом - сделать ход бота после небольшой паузы
+    // TODO: Проверить isVsBot из Game state
+    setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/game/${gameId}/bot/turn`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          },
+        });
+
+        if (response.ok) {
+          const botTurn = await response.json();
+          // Обновить UI с результатом хода бота
+          setOpponentBoard((prev) => ({
+            ...prev,
+            hits: botTurn.result.type !== 'MISS' ? [...prev.hits, { x: botTurn.x, y: botTurn.y }] : prev.hits,
+            misses: botTurn.result.type === 'MISS' ? [...prev.misses, { x: botTurn.x, y: botTurn.y }] : prev.misses,
+          }));
+
+          if (!botTurn.gameOver) {
+            setStatus('your-turn');
+          } else {
+            onGameEnd('bot');
+          }
+        }
+      } catch (error) {
+        console.error('Error making bot turn:', error);
+      }
+    }, 1000);
   };
 
   return (

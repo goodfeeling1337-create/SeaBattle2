@@ -178,6 +178,45 @@ export function setupRestRoutes(app: express.Application): void {
     }
   });
 
+  // Создание игры с ботом
+  app.post('/api/game/bot', async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.userId;
+      const { difficulty = 'medium' } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { createBotGame } = await import('./bot');
+      const { gameId } = await createBotGame(userId, difficulty);
+
+      res.json({ gameId });
+    } catch (error) {
+      console.error('Error creating bot game:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Ход бота
+  app.post('/api/game/:gameId/bot/turn', async (req: AuthRequest, res: Response) => {
+    try {
+      const { gameId } = req.params;
+
+      if (!gameId) {
+        return res.status(400).json({ error: 'gameId required' });
+      }
+
+      const { botMakeTurn } = await import('./bot');
+      const botTurn = await botMakeTurn(gameId);
+
+      res.json(botTurn);
+    } catch (error) {
+      console.error('Error making bot turn:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Получение состояния игры
   app.get('/api/game/:gameId/state', async (req: AuthRequest, res: Response) => {
     try {
