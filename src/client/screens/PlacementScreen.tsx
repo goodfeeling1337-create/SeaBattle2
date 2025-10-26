@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { GameBoard } from '../components/GameBoard';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -12,7 +12,26 @@ interface PlacementScreenProps {
 
 export default function PlacementScreen({ gameId, onReady, onCancel }: PlacementScreenProps) {
   const [board, setBoard] = useState<BoardState | null>(null);
-  const { send, connected } = useWebSocket();
+  const { send, on, connected } = useWebSocket();
+
+  // Подписка на события
+  useEffect(() => {
+    const unsubscribe = on('board:set', () => {
+      // Доска подтверждена сервером
+      console.log('Board set confirmed by server');
+    });
+
+    const unsubscribeAllReady = on('game:all_ready', () => {
+      // Обе доски готовы, начинаем игру
+      console.log('All boards ready, starting battle');
+      onReady();
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeAllReady();
+    };
+  }, [on, onReady]);
 
   const handleBoardChange = (newBoard: BoardState) => {
     setBoard(newBoard);
