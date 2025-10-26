@@ -14,6 +14,14 @@ interface AuthRequest extends Request {
 }
 
 export function setupRestRoutes(app: express.Application): void {
+  // Health checks БЕЗ auth
+  app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Middleware для извлечения и валидации Telegram auth
   app.use(async (req: AuthRequest, res, next) => {
     // Пропускаем health checks
