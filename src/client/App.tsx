@@ -69,7 +69,7 @@ export default function App() {
                     
                     // Создание игры с ботом - получаем initData разными способами
                     const tgWebApp = window.Telegram?.WebApp;
-                    const initData = tgWebApp?.initData || tgWebApp?.initDataUnsafe?.raw?.toString() || '';
+                    const initData = tgWebApp?.initData || '';
                     
                     console.log('Bot game - Telegram WebApp:', !!tgWebApp);
                     console.log('Bot game initData:', initData ? 'has data (' + initData.length + ' chars)' : 'empty');
