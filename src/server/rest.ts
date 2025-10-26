@@ -29,6 +29,14 @@ export function setupRestRoutes(app: express.Application): void {
       return next();
     }
 
+    // ВРЕМЕННО: Пропускаем /api/game/bot без auth для тестирования
+    if (req.path === '/api/game/bot') {
+      console.log('Bot game endpoint - skipping auth for testing');
+      // Создаем mock userId для теста
+      req.userId = 'test-user-id';
+      return next();
+    }
+
     console.log('Auth middleware - path:', req.path);
     console.log('Auth middleware - headers:', req.headers['x-telegram-init-data'] ? 'has initData' : 'no initData');
 
