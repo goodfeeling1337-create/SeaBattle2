@@ -16,6 +16,11 @@ interface AuthRequest extends Request {
 export function setupRestRoutes(app: express.Application): void {
   // Middleware для извлечения и валидации Telegram auth
   app.use(async (req: AuthRequest, res, next) => {
+    // Пропускаем health checks
+    if (req.path === '/health' || req.path === '/api/health') {
+      return next();
+    }
+
     const initData = req.headers['x-telegram-init-data'] as string;
 
     if (!initData) {
