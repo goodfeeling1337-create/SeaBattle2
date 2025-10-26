@@ -8,8 +8,33 @@ export class BotStrategy {
   private pendingTargets: Position[] = [];
   private lastHit: Position | null = null;
   private huntingMode: 'search' | 'target' = 'search';
+  private heatmap: Map<string, number>; // Теплокарта для Hard режима
 
-  constructor(private difficulty: BotDifficulty) {}
+  constructor(private difficulty: BotDifficulty) {
+    this.heatmap = new Map();
+    this.initializeHeatmap();
+  }
+
+  // Инициализация теплокарты
+  private initializeHeatmap(): void {
+    for (let x = 0; x < 10; x++) {
+      for (let y = 0; y < 10; y++) {
+        this.heatmap.set(`${x},${y}`, 1);
+      }
+    }
+  }
+
+  // Обновление теплокарты при промахе
+  private updateHeatmapAfterMiss(pos: Position): void {
+    // Уменьшаем вероятность вокруг промаха
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = `${pos.x + dx},${pos.y + dy}`;
+        const currentValue = this.heatmap.get(key) || 0;
+        this.heatmap.set(key, Math.max(0, currentValue - 0.1));
+      }
+    }
+  }
 
   // Получение следующего выстрела
   getNextShot(boardWidth: number, boardHeight: number): Position {
@@ -96,26 +121,86 @@ export class BotStrategy {
       }
     }
 
+    // Использование теплокарты для выбора следующего выстрела
+    return this.getHeatmapShot(boardWidth, boardHeight);
+  }
+
+  // Выбор выстрела по теплокарте
+  private getHeatmapShot(boardWidth: number, boardHeight: number): Position {
+    // Найти клетку с максимальной температурой
+    let maxHeat = 0;
+    const candidates: Position[] = [];
+
+    for (let x = 0; x < boardWidth; x++) {
+      for (let y = 0; y < boardHeight; y++) {
+        if (this.isAlreadyShot(x, y)) continue;
+
+        const key = `${x},${y}`;
+        const heat = this.heatmap.get(key) || 0;
+
+        if (heat > maxHeat) {
+          maxHeat = heat;
+          candidates.length = 0;
+          candidates.push({ x, y });
+        } else if (heat === maxHeat) {
+          candidates.push({ x, y });
+        }
+      }
+    }
+
+    // Если есть кандидаты - выбрать случайного
+    if (candidates.length > 0) {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    // Fallback на random
     return this.getRandomShot(boardWidth, boardHeight);
   }
 
   // Обработка результата выстрела
   processResult(pos: Position, result: ShotResult): void {
     this.shots.push(pos);
+    const key = `${pos.x},${pos.y}`;
+
+    // Удаляем из теплокарты
+    this.heatmap.delete(key);
 
     if (result.type === 'HIT' || result.type === 'SINK') {
       this.hits.push(pos);
       this.lastHit = pos;
       this.huntingMode = 'target';
 
+      // Увеличиваем температуру соседних клеток при попадании
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const neighborKey = `${pos.x + dx},${pos.y + dy}`;
+          const currentHeat = this.heatmap.get(neighborKey) || 0;
+          this.heatmap.set(neighborKey, currentHeat + 2);
+        }
+      }
+
       if (result.type === 'SINK') {
         this.lastHit = null;
         this.huntingMode = 'search';
+        // Корабль потоплен - снижаем температуру вокруг попаданий
+        this.hits.forEach(hit => {
+          for (let dx = -2; dx <= 2; dx++) {
+            for (let dy = -2; dy <= 2; dy++) {
+              const neighborKey = `${hit.x + dx},${hit.y + dy}`;
+              if (this.heatmap.has(neighborKey)) {
+                this.heatmap.set(neighborKey, Math.max(0, (this.heatmap.get(neighborKey) || 0) - 0.5));
+              }
+            }
+          }
+        });
       } else if (result.type === 'HIT') {
         // Добавить соседние клетки в pending
         const adjacent = this.getAdjacentCells(pos, 10, 10);
         this.pendingTargets.push(...adjacent.filter((c) => !this.isAlreadyShot(c.x, c.y)));
       }
+    } else {
+      // Промах - снижаем температуру вокруг
+      this.updateHeatmapAfterMiss(pos);
     }
   }
 
