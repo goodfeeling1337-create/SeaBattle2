@@ -80,26 +80,86 @@ describe('validateBoard - касания запрещены', () => {
   });
 
   it('должна разрешать корабли с промежутком в 1 клетку', () => {
+    // Создаем полный набор кораблей согласно правилам
     const board: BoardState = {
       width: 10,
       height: 10,
       ships: [
+        // Размер 4: 1 корабль
         {
-          id: 'ship1',
-          size: 3,
+          id: 'ship-size4',
+          size: 4,
           positions: [
             { x: 0, y: 0 },
             { x: 1, y: 0 },
             { x: 2, y: 0 },
+            { x: 3, y: 0 },
+          ],
+        },
+        // Размер 3: 2 корабля
+        {
+          id: 'ship-size3-1',
+          size: 3,
+          positions: [
+            { x: 0, y: 3 },
+            { x: 1, y: 3 },
+            { x: 2, y: 3 },
           ],
         },
         {
-          id: 'ship2',
+          id: 'ship-size3-2',
+          size: 3,
+          positions: [
+            { x: 5, y: 3 },
+            { x: 6, y: 3 },
+            { x: 7, y: 3 },
+          ],
+        },
+        // Размер 2: 3 корабля
+        {
+          id: 'ship-size2-1',
           size: 2,
           positions: [
-            { x: 4, y: 0 }, // Промежуток 1 клетка
-            { x: 5, y: 0 },
+            { x: 0, y: 6 },
+            { x: 1, y: 6 },
           ],
+        },
+        {
+          id: 'ship-size2-2',
+          size: 2,
+          positions: [
+            { x: 4, y: 6 },
+            { x: 5, y: 6 },
+          ],
+        },
+        {
+          id: 'ship-size2-3',
+          size: 2,
+          positions: [
+            { x: 8, y: 6 },
+            { x: 9, y: 6 },
+          ],
+        },
+        // Размер 1: 4 корабля
+        {
+          id: 'ship-size1-1',
+          size: 1,
+          positions: [{ x: 0, y: 9 }],
+        },
+        {
+          id: 'ship-size1-2',
+          size: 1,
+          positions: [{ x: 2, y: 9 }],
+        },
+        {
+          id: 'ship-size1-3',
+          size: 1,
+          positions: [{ x: 5, y: 9 }],
+        },
+        {
+          id: 'ship-size1-4',
+          size: 1,
+          positions: [{ x: 7, y: 9 }],
         },
       ],
       hits: [],
