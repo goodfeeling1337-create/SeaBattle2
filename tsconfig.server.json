@@ -4,7 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "include": ["src/server/**/*", "src/config.ts", "src/types.ts"],
   "exclude": ["src/client", "node_modules", "prisma"]
