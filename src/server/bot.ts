@@ -30,12 +30,14 @@ export async function createBotGame(
   const game = await prisma.game.create({
     data: {
       p1Id: userId,
-      p2Id: userId, // Временно используем userId для бота
+      p2Id: null, // Бот не реальный пользователь
       status: 'LOBBY',
       width: 10,
       height: 10,
       ruleSetId: ruleSet.id,
       turnUserId: userId, // Игрок начинает первым
+      isVsBot: true, // Помечаем как игру с ботом
+      botDifficulty: difficulty.toUpperCase(),
     },
   });
 
@@ -43,7 +45,7 @@ export async function createBotGame(
   const board = await prisma.board.create({
     data: {
       gameId: game.id,
-      ownerId: userId + '-bot', // ID бота
+      ownerId: 'bot-' + game.id, // ID бота
       dataJson: botBoardJson,
       ready: true,
     },

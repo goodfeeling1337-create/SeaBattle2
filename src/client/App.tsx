@@ -79,15 +79,16 @@ export default function App() {
                     });
 
                     if (!response.ok) {
-                      throw new Error('Failed to create bot game');
+                      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                      throw new Error(errorData.error || 'Failed to create bot game');
                     }
 
                     const { gameId } = await response.json();
                     setGameId(gameId);
                     navigateTo('placement', gameId);
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error('Error creating bot game:', error);
-                    alert('Не удалось создать игру с ботом');
+                    alert(`Не удалось создать игру с ботом: ${error.message}`);
                   }
                 }}
                 fullWidth
