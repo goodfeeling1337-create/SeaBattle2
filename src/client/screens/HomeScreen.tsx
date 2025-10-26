@@ -15,7 +15,10 @@ export default function HomeScreen({ onPlay, onSkins }: HomeScreenProps) {
 
       <div className="w-full max-w-sm space-y-4">
         <Button onClick={onPlay} fullWidth>
-          Играть
+          Играть онлайн
+        </Button>
+        <Button onClick={() => onPlay()} fullWidth variant="secondary">
+          Против бота
         </Button>
         <Button onClick={onSkins} variant="secondary" fullWidth>
           Скины

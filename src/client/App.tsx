@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GameProvider } from './contexts/GameContext';
+import { Button } from './components/Button';
 import HomeScreen from './screens/HomeScreen';
 import MatchmakingScreen from './screens/MatchmakingScreen';
 import PlacementScreen from './screens/PlacementScreen';
@@ -10,6 +11,7 @@ import SkinsScreen from './screens/SkinsScreen';
 type Screen =
   | 'home'
   | 'matchmaking'
+  | 'bot-selection'
   | 'placement'
   | 'battle'
   | 'result'
@@ -19,6 +21,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [gameId, setGameId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [botMode, setBotMode] = useState(false);
 
   useEffect(() => {
     // Инициализация Telegram WebApp
@@ -41,9 +44,37 @@ export default function App() {
       case 'home':
         return (
           <HomeScreen
-            onPlay={() => navigateTo('matchmaking')}
+            onPlay={() => navigateTo('bot-selection')}
             onSkins={() => navigateTo('skins')}
           />
+        );
+      case 'bot-selection':
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-6">
+            <h2 className="text-2xl font-bold">Выберите соперника</h2>
+            <div className="w-full max-w-sm space-y-4">
+              <Button
+                onClick={() => {
+                  setBotMode(false);
+                  navigateTo('matchmaking');
+                }}
+                fullWidth
+              >
+                Играть онлайн
+              </Button>
+              <Button
+                onClick={() => {
+                  setBotMode(true);
+                  // TODO: Создать игру с ботом
+                  alert('Режим с ботом в разработке');
+                }}
+                fullWidth
+                variant="secondary"
+              >
+                Против бота
+              </Button>
+            </div>
+          </div>
         );
       case 'matchmaking':
         return (

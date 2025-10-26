@@ -62,6 +62,8 @@ model Game {
   boards     Board[]
   shots      Shot[]
   privateRoom PrivateRoom?
+  isVsBot     Boolean  @default(false)
+  botDifficulty String?
 
   @@index([status])
   @@index([p1Id])
