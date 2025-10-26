@@ -57,11 +57,25 @@ export async function createBotGame(
     },
   });
 
-  // Создание доски бота
+  // Создание доски бота (без связи с реальным пользователем)
+  // Используем специальный ID для бота, который не будет проходить foreign key
+  // Либо создадим dummy user для бота
+  let botUser = await prisma.user.findFirst({ where: { telegramId: 'bot-user' } });
+  
+  if (!botUser) {
+    botUser = await prisma.user.create({
+      data: {
+        telegramId: 'bot-user',
+        username: 'AI Bot',
+        displayName: 'AI Bot',
+      },
+    });
+  }
+  
   const board = await prisma.board.create({
     data: {
       gameId: game.id,
-      ownerId: 'bot-' + game.id, // ID бота
+      ownerId: botUser.id, // Используем ID реального пользователя-бота
       dataJson: botBoardJson,
       ready: true,
     },
