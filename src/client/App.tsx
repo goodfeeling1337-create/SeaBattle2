@@ -67,9 +67,16 @@ export default function App() {
                   try {
                     setBotMode(true);
                     
-                    // Создание игры с ботом
-                    const initData = window.Telegram?.WebApp?.initData || '';
-                    console.log('Bot game initData:', initData ? 'has data' : 'empty');
+                    // Создание игры с ботом - получаем initData разными способами
+                    const tgWebApp = window.Telegram?.WebApp;
+                    const initData = tgWebApp?.initData || tgWebApp?.initDataUnsafe?.raw?.toString() || '';
+                    
+                    console.log('Bot game - Telegram WebApp:', !!tgWebApp);
+                    console.log('Bot game initData:', initData ? 'has data (' + initData.length + ' chars)' : 'empty');
+                    
+                    if (!initData && process.env.NODE_ENV === 'development') {
+                      console.warn('No initData in development, using mock');
+                    }
                     
                     const response = await fetch('/api/game/bot', {
                       method: 'POST',
