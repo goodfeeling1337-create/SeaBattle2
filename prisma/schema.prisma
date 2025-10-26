@@ -61,6 +61,7 @@ model Game {
 
   boards     Board[]
   shots      Shot[]
+  privateRoom PrivateRoom?
 
   @@index([status])
   @@index([p1Id])
@@ -86,6 +87,19 @@ model RuleSet {
   games        Game[]
 
   @@map("rule_sets")
+}
+
+model PrivateRoom {
+  id        String   @id @default(cuid())
+  code      String   @unique // 4-character room code
+  gameId    String?  // Null until game is created
+  game      Game?    @relation(fields: [gameId], references: [id])
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Room expiry time
+  full      Boolean  @default(false) // True when 2 players joined
+
+  @@index([code])
+  @@map("private_rooms")
 }
 
 model Board {

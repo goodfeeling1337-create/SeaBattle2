@@ -175,8 +175,42 @@ async function handleQueueJoin(ws: ClientConnection): Promise<void> {
 
 // Присоединение к приватной комнате
 async function handleRoomJoin(ws: ClientConnection, roomCode: string): Promise<void> {
-  // TODO: Implement room matching
-  ws.send(JSON.stringify({ type: 'error', error: 'Not implemented' }));
+  if (!ws.userId) {
+    return ws.send(JSON.stringify({ type: 'error', error: 'Not authenticated' }));
+  }
+
+  const { getPrivateRoom, createPrivateRoom, joinPrivateRoom } = await import('./rooms');
+
+  // Проверка формата кода
+  if (roomCode.length !== 4) {
+    return ws.send(JSON.stringify({ type: 'error', error: 'Invalid room code' }));
+  }
+
+  // Получение или создание комнаты
+  let room = await getPrivateRoom(roomCode.toUpperCase());
+
+  if (!room) {
+    // Создание новой комнаты
+    room = await createPrivateRoom();
+    ws.gameId = room.id; // Временно используем ID комнаты
+
+    ws.send(JSON.stringify({ type: 'room:created', payload: { code: room.code } }));
+    return;
+  }
+
+  // Присоединение к существующей комнате
+  if (room.full) {
+    return ws.send(JSON.stringify({ type: 'error', error: 'Room is full' }));
+  }
+
+  if (room.gameId) {
+    ws.gameId = room.gameId;
+    ws.send(JSON.stringify({ type: 'game:joined', payload: { gameId: room.gameId } }));
+    return;
+  }
+
+  // Комната существует, но пустая - первый игрок ждет
+  ws.send(JSON.stringify({ type: 'room:waiting' }));
 }
 
 // Установка доски
