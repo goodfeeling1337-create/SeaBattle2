@@ -44,7 +44,7 @@ export async function getPrivateRoom(code: string): Promise<RoomData | null> {
 
   // Проверка истечения срока
   if (room.expiresAt < new Date()) {
-    await prisma.privateRoom.delete({ where: { code } });
+    await prisma.privateRoom.deleteMany({ where: { code } });
     return null;
   }
 
