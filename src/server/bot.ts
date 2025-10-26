@@ -22,6 +22,21 @@ export async function createBotGame(
     throw new Error('Rule set not found');
   }
 
+  // Создание пользователя если его нет (для тестирования)
+  let user = await prisma.user.findUnique({ where: { id: userId } });
+  
+  if (!user) {
+    console.log('Creating test user:', userId);
+    user = await prisma.user.create({
+      data: {
+        id: userId,
+        telegramId: `test-${userId}`,
+        username: 'Test User',
+        displayName: 'Test User',
+      },
+    });
+  }
+
   // Генерация доски бота
   const botBoard = generateBotBoard(10, 10);
   const botBoardJson = serializeBoard(botBoard);
