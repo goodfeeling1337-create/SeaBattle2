@@ -36,7 +36,8 @@ export function setupRealtimeHandler(wss: WebSocketServer): void {
         } else if (ws.userId) {
           await handleGameMessage(ws, message);
         } else {
-          ws.send(JSON.stringify({ type: 'error', error: 'Not authenticated' }));
+          // Авторизация через init message
+          ws.send(JSON.stringify({ type: 'error', error: 'Not authenticated. Send {type: "init", initData: ""}' }));
         }
       } catch (error) {
         console.error('Error handling message:', error);
@@ -67,6 +68,12 @@ export function setupRealtimeHandler(wss: WebSocketServer): void {
 
 // Инициализация подключения с Telegram auth
 async function handleInit(ws: ClientConnection, initData: string): Promise<void> {
+  // Если пустая initData в dev режиме - используем dev auth
+  if (!initData && process.env.NODE_ENV !== 'production') {
+    await handleDevAuth(ws);
+    return;
+  }
+
   const auth = await validateTelegramAuth(initData, config.BOT_TOKEN);
 
   if (!auth) {
@@ -82,6 +89,26 @@ async function handleInit(ws: ClientConnection, initData: string): Promise<void>
   ws.send(JSON.stringify({ type: 'ready', userId }));
 
   console.log(`✅ User authenticated: ${userId}`);
+}
+
+// Dev режим: создание тестового пользователя
+async function handleDevAuth(ws: ClientConnection): Promise<void> {
+  // Ищем или создаём тестового пользователя
+  let user = await prisma.user.findFirst({ where: { telegramId: 'dev-test-user' } });
+  
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        telegramId: 'dev-test-user',
+        username: 'dev-user',
+        displayName: 'Dev User',
+      },
+    });
+  }
+
+  ws.userId = user.id;
+  ws.send(JSON.stringify({ type: 'ready', userId: user.id }));
+  console.log(`✅ Dev user authenticated: ${user.id}`);
 }
 
 // Обработка игровых сообщений
