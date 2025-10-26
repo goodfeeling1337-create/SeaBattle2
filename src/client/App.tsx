@@ -69,6 +69,8 @@ export default function App() {
                     
                     // Создание игры с ботом
                     const initData = window.Telegram?.WebApp?.initData || '';
+                    console.log('Bot game initData:', initData ? 'has data' : 'empty');
+                    
                     const response = await fetch('/api/game/bot', {
                       method: 'POST',
                       headers: {
@@ -78,8 +80,11 @@ export default function App() {
                       body: JSON.stringify({ difficulty: 'medium' }),
                     });
 
+                    console.log('Bot game response status:', response.status);
+
                     if (!response.ok) {
                       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                      console.log('Bot game error:', errorData);
                       throw new Error(errorData.error || 'Failed to create bot game');
                     }
 
