@@ -215,8 +215,11 @@ async function handleRoomJoin(ws: ClientConnection, roomCode: string): Promise<v
 
 // Установка доски
 async function handleBoardSet(ws: ClientConnection, payload: any): Promise<void> {
+  const { sendError } = await import('./errors');
+  const { ErrorCode } = await import('./errors');
+  
   if (!ws.userId || !ws.gameId) {
-    return ws.send(JSON.stringify({ type: 'error', error: 'Not in game' }));
+    return sendError(ws, ErrorCode.ERR_NOT_IN_GAME, 'Not in game');
   }
 
   const { board } = payload;
@@ -228,7 +231,7 @@ async function handleBoardSet(ws: ClientConnection, payload: any): Promise<void>
   });
 
   if (!game || !game.ruleSet) {
-    return ws.send(JSON.stringify({ type: 'error', error: 'Game or rule set not found' }));
+    return sendError(ws, ErrorCode.ERR_GAME_NOT_FOUND, 'Game or rule set not found');
   }
 
   // Валидация доски
@@ -245,11 +248,11 @@ async function handleBoardSet(ws: ClientConnection, payload: any): Promise<void>
     });
 
     if (!isValid) {
-      return ws.send(JSON.stringify({ type: 'error', error: 'Invalid board placement' }));
+      return sendError(ws, ErrorCode.ERR_INVALID_PLACEMENT, 'Invalid board placement');
     }
   } catch (error) {
     console.error('Board validation error:', error);
-    return ws.send(JSON.stringify({ type: 'error', error: 'Failed to validate board' }));
+    return sendError(ws, ErrorCode.ERR_INVALID_PLACEMENT, 'Failed to validate board', error);
   }
 
   // Обновление доски в БД
@@ -288,9 +291,19 @@ async function handleBoardSet(ws: ClientConnection, payload: any): Promise<void>
 
 // Выстрел
 async function handleShotFire(ws: ClientConnection, payload: any): Promise<void> {
-  if (!ws.userId || !ws.gameId) return;
+  const { sendError } = await import('./errors');
+  const { ErrorCode } = await import('./errors');
+  
+  if (!ws.userId || !ws.gameId) {
+    return sendError(ws, ErrorCode.ERR_NOT_IN_GAME, 'Not in game');
+  }
 
   const { x, y } = payload;
+
+  // Проверка координат
+  if (x < 0 || x >= 10 || y < 0 || y >= 10) {
+    return sendError(ws, ErrorCode.ERR_INVALID_COORDINATES, 'Invalid coordinates');
+  }
 
   // Получение игры
   const game = await prisma.game.findUnique({
@@ -299,12 +312,12 @@ async function handleShotFire(ws: ClientConnection, payload: any): Promise<void>
   });
 
   if (!game) {
-    return ws.send(JSON.stringify({ type: 'error', error: 'Game not found' }));
+    return sendError(ws, ErrorCode.ERR_GAME_NOT_FOUND, 'Game not found');
   }
 
   // Проверка хода
   if (game.turnUserId !== ws.userId) {
-    return ws.send(JSON.stringify({ type: 'error', error: 'Not your turn' }));
+    return sendError(ws, ErrorCode.ERR_NOT_YOUR_TURN, 'Not your turn');
   }
 
   // Проверка дубликатов
@@ -313,7 +326,7 @@ async function handleShotFire(ws: ClientConnection, payload: any): Promise<void>
   });
 
   if (existingShot) {
-    return ws.send(JSON.stringify({ type: 'error', error: 'Already shot here' }));
+    return sendError(ws, ErrorCode.ERR_CELL_ALREADY_SHOT, 'Already shot here');
   }
 
   // Получение доски противника
