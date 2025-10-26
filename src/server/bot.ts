@@ -23,19 +23,20 @@ export async function createBotGame(
   }
 
   // Создание пользователя если его нет (для тестирования)
-  let user = await prisma.user.findUnique({ where: { id: userId } });
+  let user = await prisma.user.findFirst({ where: { telegramId: `test-${userId}` } });
   
   if (!user) {
     console.log('Creating test user:', userId);
     user = await prisma.user.create({
       data: {
-        id: userId,
         telegramId: `test-${userId}`,
         username: 'Test User',
         displayName: 'Test User',
       },
     });
   }
+  
+  userId = user.id; // Используем реальный ID пользователя
 
   // Генерация доски бота
   const botBoard = generateBotBoard(10, 10);
