@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { generateBotBoard } from '../domain/bot-placement';
 import { BotStrategy, type BotDifficulty } from '../domain/bot-strategy';
-import { serializeBoard, deserializeBoard, resolveShot, isGameOver } from '../domain/shoot';
+import { resolveShot, isGameOver } from '../domain/shoot';
+import { serializeBoard, deserializeBoard } from '../domain/board';
 import { type ShotResult } from '../types';
 
 const prisma = new PrismaClient();
